@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import { configuration } from "./configuration/configuration";
 import {
   DAEMON,
