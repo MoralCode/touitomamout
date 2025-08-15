@@ -23,8 +23,8 @@ export const getBlueskyLinkMetadata = async (
     return null;
   }
 
-  // Metadata without image
-  if (!data.image) {
+  // Metadata without image or SVG
+  if (!data.image || data.image.endsWith(".svg")) {
     return {
       ...data,
       image: undefined,
