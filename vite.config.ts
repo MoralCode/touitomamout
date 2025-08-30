@@ -17,6 +17,7 @@ export default defineConfig({
       ],
     },
     target: "esnext", // transpile as little as possible
+    sourcemap: true,
   },
   plugins: [dts()],
 });
