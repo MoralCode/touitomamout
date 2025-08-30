@@ -31,30 +31,46 @@ export const postsSynchronizerService = async (
       const log = ora({
         color: "cyan",
         prefixText: oraPrefixer("content-sync"),
-      }).start();
+      }).start(`Syncing tweet ${tweet.id} (${tweetIndex}/${tweets.length})`);
 
-      const medias = [
-        ...tweet.photos.map((i) => ({ ...i, type: "image" })),
-        ...tweet.videos.map((i) => ({ ...i, type: "video" })),
-      ] as Media[];
+      try {
+        const medias = [
+          ...tweet.photos.map((i) => ({ ...i, type: "image" })),
+          ...tweet.videos.map((i) => ({ ...i, type: "video" })),
+        ] as Media[];
 
-      const { mastodon: mastodonPost, bluesky: blueskyPost } = await makePost(
-        tweet,
-        mastodonClient,
-        blueskyClient,
-        log,
-        { current: tweetIndex, total: tweets.length },
-      );
+        const { mastodon: mastodonPost, bluesky: blueskyPost } = await makePost(
+          tweet,
+          mastodonClient,
+          blueskyClient,
+          log,
+          { current: tweetIndex, total: tweets.length },
+        );
 
-      if (!SYNC_DRY_RUN) {
-        await mastodonSenderService(mastodonClient, mastodonPost, medias, log);
-        await blueskySenderService(blueskyClient, blueskyPost, medias, log);
+        if (!SYNC_DRY_RUN) {
+          await mastodonSenderService(
+            mastodonClient,
+            mastodonPost,
+            medias,
+            log,
+          );
+          await blueskySenderService(blueskyClient, blueskyPost, medias, log);
+        }
+
+        if (mastodonPost || blueskyPost) {
+          synchronizedPostsCountThisRun.inc();
+        }
+
+        log.succeed(
+          `Synced tweet ${tweet.id} (${tweetIndex}/${tweets.length})`,
+        );
+      } catch (err) {
+        // An error occurred while processing this specific tweet. Log it and skip.
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        log.fail(
+          `Failed tweet ${tweet.id} (${tweetIndex}/${tweets.length}): ${errorMessage}. Skipping.`,
+        );
       }
-      if (mastodonClient || blueskyPost) {
-        synchronizedPostsCountThisRun.inc();
-      }
-
-      log.stop();
     }
 
     return {
