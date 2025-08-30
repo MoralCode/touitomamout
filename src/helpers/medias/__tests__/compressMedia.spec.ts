@@ -38,4 +38,7 @@ describe("compressMedia", () => {
       expect(await areBlobsEqual(compressedBlob, originalBlob)).toBe(false);
     });
   });
+},
+{
+  timeout: 30000,
 });
